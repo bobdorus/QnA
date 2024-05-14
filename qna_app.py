@@ -1,70 +1,58 @@
 import streamlit as st
 from snowflake.snowpark.functions import col
 import pandas as pd
-import random
 
 MIN = 1
 MAX = 1099
-
 
 def get_option_selector(session, q_num):
     options_df = session.table("qna.pro.options").filter(col("Q_NUM") == q_num).toPandas()
     correct_answer_len = len(session.table("qna.pro.question").filter(col("Q_NUM") == q_num).select("CORRECT_ANSWER").collect()[0][0])
 
     if correct_answer_len == 1:
-        # Single select
         selected_option = st.radio("Select an option", [f"{option}: {text}" for option, text in zip(options_df["OPTION"], options_df["TEXT"])])
         selected_options = [selected_option]
     else:
-        # Multiple select
         selected_options = st.multiselect("Select one or more options", [f"{option}: {text}" for option, text in zip(options_df["OPTION"], options_df["TEXT"])])
 
     return selected_options
 
+def question_display(session, q_num):
+    st.subheader("Question Details:")
 
-def question_display(selected_num, session, question_container):
-    with question_container:
-        st.subheader("Question Details:")
+    # Handling missing question
+    my_dataframe = session.table("qna.pro.question").filter(col("Q_NUM") == q_num)
+    if my_dataframe.count() == 0:
+        st.warning("Question not found.")
+        return
 
-        # Handling missing question
-        my_dataframe = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num)
-        if my_dataframe.count() == 0:
-            st.warning("Question not found.")
-            return  # Exit the function to prevent errors
+    pd_df = my_dataframe.toPandas()
+    st.markdown(f'<b style="font-size:24px; color:#42f587;">NO. {q_num}</b>', unsafe_allow_html=True)
+    st.write(pd_df['Q_TEXT'][0])
 
-        pd_df = my_dataframe.toPandas()
-        st.markdown(f'<b style="font-size:24px; color:#42f587;">NO. {selected_num}</b>', unsafe_allow_html=True)
-        st.write(pd_df['Q_TEXT'][0])
+    selected_options = get_option_selector(session, q_num)
 
-        selected_options = get_option_selector(session, selected_num)
-
-        # Display the selected options
-        st.write("Selected options:")
-        for option in selected_options:
-            st.write(option)
-
+    # Display the selected options
+    st.write("Selected options:")
+    for option in selected_options:
+        st.write(option)
 
 def review_mode(q_num, session):
-    with st.container():  # Creates a container for Review mode
-        if 'selected_num' not in st.session_state:
-            st.session_state.selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
-        else:
-            selected_num = st.session_state.selected_num
+    if 'selected_num' not in st.session_state:
+        st.session_state.selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
 
-        # Create a container for the question display and buttons
-        question_container = st.container()
+    selected_num = st.session_state.selected_num
 
-        # Display the question details
-        question_display(selected_num, session, question_container)
+    question_container = st.container()
 
-        # Get the correct answer from the question table
+    with question_container:
+        question_display(session, selected_num)
+
         correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num).select(col("CORRECT_ANSWER")).collect()[0][0]
 
-        # Display the correct answer
         st.subheader("Correct Answer:")
         st.write(correct_answer)
 
-        # Add buttons to navigate to previous and next questions
         col1, col2, col3 = st.columns([1, 1, 2])
         with col1:
             if selected_num > 1:
@@ -73,62 +61,54 @@ def review_mode(q_num, session):
             if selected_num < 1100:
                 next_button = st.button(f"Next question ({selected_num + 1})", key=f"next_{selected_num}")
 
-        # Create empty space widgets to position the buttons above the update section
         empty_col1, empty_col2, empty_col3 = st.columns([1, 1, 2])
         with empty_col1:
             st.empty()
         with empty_col2:
             st.empty()
 
-        # Get user's answer and topic input
         user_answer = st.text_input("Enter your answer:", "")
         user_topic = st.text_input("Enter your topic (if any):", "")
         user_comment = st.text_input("Enter your comment (if any):", "")
 
-        # Submit button
         submit_button = st.button("Submit Update")
 
-        # Check if buttons are clicked and update the question display accordingly
         if prev_button:
             st.session_state.selected_num -= 1
-            question_container.empty()  # Clear the container
-            question_display(selected_num, session, question_container)
+            question_container.empty()
+            question_display(session, st.session_state.selected_num)
         if next_button:
             st.session_state.selected_num += 1
-            question_container.empty()  # Clear the container
-            question_display(selected_num, session, question_container)
+            question_container.empty()
+            question_display(session, st.session_state.selected_num)
         if submit_button:
-            # Update the question table with user's answer, topic, and comment
-            session.table("qna.pro.question").update(
-                values={"CORRECT_ANSWER": user_answer, "TOPIC": user_topic, "COMMENT": user_comment},
-                filter=col("Q_NUM") == selected_num
-            ).collect()
+            try:
+                session.table("qna.pro.question").update(
+                    values={"CORRECT_ANSWER": user_answer, "TOPIC": user_topic, "COMMENT": user_comment},
+                    filter=col("Q_NUM") == selected_num
+                ).collect()
 
-            # Update the options table with user's answer
-            session.table("qna.pro.options").update(
-                values={"OPTION": user_answer},
-                filter=(col("Q_NUM") == selected_num) & (col("OPTION") == correct_answer)
-            ).collect()
+                session.table("qna.pro.options").update(
+                    values={"OPTION": user_answer},
+                    filter=(col("Q_NUM") == selected_num) & (col("OPTION") == correct_answer)
+                ).collect()
 
-            st.success("Update successful!")
-
+                st.success("Update successful!")
+            except Exception as e:
+                st.error(f"Update failed: {str(e)}")
 
 def seq_mode(q_num, session):
-    with st.container():  # Creates a container for Sequence mode
-        pass
+    pass
 
 def test_mode(q_num, session):
-    with st.container():  # Creates a container for Test mode
-        pass
+    pass
 
-# Main App
 st.title(":snowflake: Question & Answer App :snowflake:")
 st.markdown("<style>div.block-container{text-align: center;}</style>", unsafe_allow_html=True)
 st.write("Choose your question or leave it empty to start with the 1st question.")
 
-q_num = st.text_input("Enter your question number:")
+q_num = st.text_input("Enter your question number:", value="1", key="q_num_input")
 
-# Snowflake Connection (outside the mode selection)
 cnx = st.connection('snowflake')
 session = cnx.session()
 
@@ -140,5 +120,3 @@ elif mode == "Sequence":
     seq_mode(q_num, session)
 elif mode == "Test":
     test_mode(q_num, session)
- 
-
