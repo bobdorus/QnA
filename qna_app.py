@@ -3,6 +3,9 @@ from snowflake.snowpark.functions import col
 import pandas as pd
 import random
 
+MIN = 1
+MAX = 1099
+
 
 def get_option_selector(session, q_num):
     options_df = session.table("qna.pro.options").filter(col("Q_NUM") == q_num).toPandas()
@@ -42,12 +45,13 @@ def question_display(q_num, session):
         st.write(option)
 
     # Add buttons to navigate to previous and next questions
+    # Add buttons to navigate to previous and next questions
     if selected_num > 1:
         if st.button(f"Previous question ({selected_num - 1})", key=f"prev_{selected_num}"):
-            q_num = selected_num - 1
+            question_display(selected_num - 1, session)
     if selected_num < 1100:
         if st.button(f"Next question ({selected_num + 1})", key=f"next_{selected_num}"):
-            q_num = selected_num + 1
+            question_display(selected_num + 1, session)
 
     return q_num
 
