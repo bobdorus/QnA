@@ -7,7 +7,7 @@ MAX = 1099
 
 def get_option_selector(session, q_num):
     options_df = session.table("qna.pro.options").filter(col("Q_NUM") == q_num).toPandas()
-    correct_answer_len = len(session.table("qna.pro.question").filter(col("Q_NUM") == q_num).select("CORRECT_ANSWER").collect()[0][0])
+    correct_answer_len = len(session.table("qna.pro.question").filter(col("Q_NUM") == q_num).select("CORRECT_ANSWER")).collect()[0][0]
 
     if correct_answer_len == 1:
         selected_option = st.radio("Select an option", [f"{option}: {text}" for option, text in zip(options_df["OPTION"], options_df["TEXT"])])
@@ -53,6 +53,10 @@ def review_mode(session):
         
         st.subheader("Correct Answer:")
         st.markdown(formatted_correct_answer, unsafe_allow_html=True)
+
+        # Initialize buttons to None
+        prev_button = None
+        next_button = None
 
         col1, col2, col3 = st.columns([1, 1, 1])
         with col1:
