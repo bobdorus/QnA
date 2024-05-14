@@ -51,7 +51,10 @@ def question_display(q_num, session, question_container):
 
 def review_mode(q_num, session):
     with st.container():  # Creates a container for Review mode
-        selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
+        if 'selected_num' not in st.session_state:
+            st.session_state.selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
+        else:
+            selected_num = st.session_state.selected_num
 
         # Create a container for the question display and buttons
         question_container = st.container()
@@ -66,48 +69,53 @@ def review_mode(q_num, session):
         st.subheader("Correct Answer:")
         st.write(correct_answer)
 
+        # Add buttons to navigate to previous and next questions
+        col1, col2, col3 = st.columns([1, 1, 2])
+        with col1:
+            if selected_num > 1:
+                if st.button(f"Previous question ({selected_num - 1})", key=f"prev_{selected_num}"):
+                    st.session_state.selected_num -= 1
+                    question_container.empty()  # Clear the container
+                    question_display(selected_num, session, question_container)
+        with col2:
+            if selected_num < 1100:
+                if st.button(f"Next question ({selected_num + 1})", key=f"next_{selected_num}"):
+                    st.session_state.selected_num += 1
+                    question_container.empty()  # Clear the container
+                    question_display(selected_num, session, question_container)
+
         # Get user's answer and topic input
         user_answer = st.text_input("Enter your answer:", "")
         user_topic = st.text_input("Enter your topic (if any):", "")
         user_comment = st.text_input("Enter your comment (if any):", "")
 
-        # Add buttons to navigate to previous and next questions
-        if selected_num > 1:
-            if st.button(f"Previous question ({selected_num - 1})", key=f"prev_{selected_num}"):
-                question_container.empty()  # Clear the container
-                question_display(selected_num - 1, session, question_container)
-        if selected_num < 1100:
-            if st.button(f"Next question ({selected_num + 1})", key=f"next_{selected_num}"):
-                question_container.empty()  # Clear the container
-                question_display(selected_num + 1, session, question_container)
+        with col3:
+            # Submit button
+            if st.button("Submit Update"):
+                # Update the question table with user's answer, topic, and comment
+                session.table("qna.pro.question").update(
+                    values={"CORRECT_ANSWER": user_answer, "TOPIC": user_topic, "COMMENT": user_comment},
+                    filter=col("Q_NUM") == selected_num
+                ).collect()
 
-        st.subheader("Update Section:")
-        # Submit button
-        if st.button("Submit Update"):
-            # Update the question table with user's answer, topic, and comment
-            session.table("qna.pro.question").update(
-                values={"CORRECT_ANSWER": user_answer, "TOPIC": user_topic, "COMMENT": user_comment},
-                filter=col("Q_NUM") == selected_num
-            ).collect()
+                # Update the options table with user's answer
+                session.table("qna.pro.options").update(
+                    values={"OPTION": user_answer},
+                    filter=(col("Q_NUM") == selected_num) & (col("OPTION") == correct_answer)
+                ).collect()
 
-            # Update the options table with user's answer
-            session.table("qna.pro.options").update(
-                values={"OPTION": user_answer},
-                filter=(col("Q_NUM") == selected_num) & (col("OPTION") == correct_answer)
-            ).collect()
-
-            st.success("Update successful!")
+                st.success("Update successful!")
 
         
 
 
 def seq_mode(q_num, session):
     with st.container():  # Creates a container for Sequence mode
-        question_display(q_num, session)
+        pass
 
 def test_mode(q_num, session):
     with st.container():  # Creates a container for Test mode
-        question_display(q_num, session)
+        pass
 
 # Main App
 st.title(":snowflake: Question & Answer App :snowflake:")
