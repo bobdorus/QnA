@@ -21,7 +21,7 @@ def question_display(q_num, session):
     # Handling missing question
     if my_dataframe.count() == 0:
         st.warning("Question not found.")
-    return  # Exit the function to prevent errors
+        return  # Exit the function to prevent errors
 
     pd_df = my_dataframe.toPandas()
     st.write(selected_num)
