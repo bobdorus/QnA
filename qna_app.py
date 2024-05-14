@@ -41,7 +41,7 @@ def review_mode(q_num, cnx):
     #     # Code to update the database with the new values
     #     st.success("Update submitted successfully!")
 
-def seq_mode(q_num): 
+def seq_mode(q_num, cnx): 
     st.subheader("Question Details:")
     selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
 
@@ -53,7 +53,7 @@ def seq_mode(q_num):
     st.write(selected_num)
     st.write(pd_df['Q_TEXT']) 
 
-def test_mode(q_num): # randomize q value 
+def test_mode(q_num, cnx): # randomize q value 
     st.subheader("Question Details:")
     selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
 
