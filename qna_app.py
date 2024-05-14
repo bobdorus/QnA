@@ -8,15 +8,19 @@ def get_option_selector(session, q_num):
     options_df = session.table("qna.pro.options").filter(col("Q_NUM") == q_num).toPandas()
     correct_answer_len = len(session.table("qna.pro.question").filter(col("Q_NUM") == q_num).select("CORRECT_ANSWER").collect()[0][0])
 
+    options = [(option, text) for option, text in zip(options_df["OPTION"].tolist(), options_df["TEXT"].tolist())]
+
     if correct_answer_len == 1:
         # Single select
-        selected_option = st.radio("Select an option", options_df["OPTION"].tolist())
+        selected_option = st.radio("Select an option", options)
         selected_options = [selected_option]
     else:
         # Multiple select
-        selected_options = st.multiselect("Select one or more options", options_df["OPTION"].tolist())
+        selected_options = st.multiselect("Select one or more options", options)
 
     return selected_options
+
+
 
 # def question_display(q_num, session):
 #     st.subheader("Question Details:")
@@ -61,8 +65,12 @@ def question_display(q_num, session):
 
     selected_options = get_option_selector(session, selected_num)
 
-    # Display selected options
-    st.write("Selected options:", selected_options)
+    # Display the selected options
+    st.write("Selected options:")
+    for option in selected_options:
+        st.write(option)
+
+
 
 
 def review_mode(q_num, session):
