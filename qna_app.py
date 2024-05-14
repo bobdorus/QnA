@@ -3,7 +3,7 @@ from snowflake.snowpark.functions import col
 import pandas as pd
 
 MIN = 1
-MAX = 1099
+MAX = 1100
 
 def get_option_selector(session, q_num):
     options_df = session.table("qna.pro.options").filter(col("Q_NUM") == q_num).toPandas()
@@ -46,25 +46,24 @@ def review_mode(session):
         correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num).select(col("CORRECT_ANSWER")).collect()[0][0]
 
         # Format the correct answer
-        formatted_correct_answer = ', '.join([f"<b>{answer}</b>" for answer in correct_answer.split(',')])
+        if len(correct_answer) > 1:
+            formatted_correct_answer = ', '.join([f"<b>{char}</b>" for char in correct_answer])
+        else:
+            formatted_correct_answer = f"<b>{correct_answer}</b>"
         
         st.subheader("Correct Answer:")
         st.markdown(formatted_correct_answer, unsafe_allow_html=True)
 
-        col1, col2, col3 = st.columns([1, 1, 2])
+        col1, col2, col3 = st.columns([1, 1, 1])
         prev_button = next_button = None
         with col1:
-            if selected_num > MIN:
-                prev_button = st.button(f"Previous question ({selected_num - 1})", key=f"prev_{selected_num}")
+            st.empty()
         with col2:
+            if selected_num > MIN:
+                prev_button = st.button(f"Prev ({selected_num - 1})", key=f"prev_{selected_num}")
+        with col3:
             if selected_num < MAX:
-                next_button = st.button(f"Next question ({selected_num + 1})", key=f"next_{selected_num}")
-
-        empty_col1, empty_col2, empty_col3 = st.columns([1, 1, 2])
-        with empty_col1:
-            st.empty()
-        with empty_col2:
-            st.empty()
+                next_button = st.button(f"Next ({selected_num + 1})", key=f"next_{selected_num}")
 
         user_answer = st.text_input("Enter your answer:", "")
         user_topic = st.text_input("Enter your topic (if any):", "")
