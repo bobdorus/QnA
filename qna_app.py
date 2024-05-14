@@ -10,11 +10,11 @@ def get_option_selector(session, q_num):
 
     if correct_answer_len == 1:
         # Single select
-        selected_option = st.radio("Select an option", [f"{option}: {text}" for option, text in zip(options_df["OPTION"], options_df["TEXT"])])
+        selected_option = st.radio("Select an option", [f"{option.upper()}: {text}" for option, text in zip(options_df["OPTION"], options_df["TEXT"])])
         selected_options = [selected_option]
     else:
         # Multiple select
-        selected_options = st.multiselect("Select one or more options", [f"{option}: {text}" for option, text in zip(options_df["OPTION"], options_df["TEXT"])])
+        selected_options = st.multiselect("Select one or more options", [f"{option.upper()}: {text}" for option, text in zip(options_df["OPTION"], options_df["TEXT"])])
 
     return selected_options
 
