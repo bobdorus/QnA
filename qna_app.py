@@ -19,34 +19,6 @@ def get_option_selector(session, q_num):
     return selected_options
 
 
-
-
-# def question_display(q_num, session):
-#     st.subheader("Question Details:")
-#     selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
-
-#     my_dataframe = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num)
-
-#     # Handling missing question
-#     if my_dataframe.count() == 0:
-#         st.warning("Question not found.")
-#         return  # Exit the function to prevent errors
-
-#     pd_df = my_dataframe.toPandas()
-#     st.write(selected_num)
-#     st.write(pd_df['Q_TEXT'][0])
-
-#     options_df = session.table("qna.pro.options").filter(col("Q_NUM") == selected_num).toPandas()
-#     st.dataframe(options_df)
-
-#     # Previous button
-#     if selected_num > 1:
-#         st.button(f"Previous (Question {selected_num - 1})", key="prev", on_click=question_display, args=(str(selected_num - 1), session))
-
-#     # Next button
-#     if selected_num < 1100:
-#         st.button(f"Next (Question {selected_num + 1})", key="next", on_click=question_display, args=(str(selected_num + 1), session))
-
 def question_display(q_num, session):
     st.subheader("Question Details:")
     selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
@@ -69,6 +41,7 @@ def question_display(q_num, session):
     for option in selected_options:
         st.write(option)
 
+    return selected_options
 
 
 
