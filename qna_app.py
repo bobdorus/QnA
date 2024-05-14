@@ -32,7 +32,8 @@ def question_display(q_num, session):
 
     pd_df = my_dataframe.toPandas()
     # st.write(selected_num)
-    st.markdown(f'<p style="font-size:20px; color:#42f587;"><b>{selected_num}</b></p>', unsafe_allow_html=True)
+    # st.markdown(f'<p style="font-size:20px; color:#42f587;"><b>{selected_num}</b></p>', unsafe_allow_html=True)
+    st.markdown(f'<b style="font-size:24px;">NO. {selected_num}</b>', unsafe_allow_html=True)
 
     st.write(pd_df['Q_TEXT'][0])
 
