@@ -3,7 +3,7 @@ from snowflake.snowpark.functions import col
 import pandas as pd
 
 MIN = 1
-MAX = 1099
+MAX = 1100
 
 def get_option_selector(session, q_num):
     options_df = session.table("qna.pro.options").filter(col("Q_NUM") == q_num).toPandas()
@@ -20,7 +20,6 @@ def get_option_selector(session, q_num):
 def question_display(session, q_num):
     st.subheader("Question Details:")
 
-    # Handling missing question
     my_dataframe = session.table("qna.pro.question").filter(col("Q_NUM") == q_num)
     if my_dataframe.count() == 0:
         st.warning("Question not found.")
@@ -32,7 +31,6 @@ def question_display(session, q_num):
 
     selected_options = get_option_selector(session, q_num)
 
-    # Display the selected options
     st.write("Selected options:")
     for option in selected_options:
         st.write(option)
@@ -54,6 +52,7 @@ def review_mode(q_num, session):
         st.write(correct_answer)
 
         col1, col2, col3 = st.columns([1, 1, 2])
+        prev_button = next_button = None
         with col1:
             if selected_num > 1:
                 prev_button = st.button(f"Previous question ({selected_num - 1})", key=f"prev_{selected_num}")
@@ -75,12 +74,10 @@ def review_mode(q_num, session):
 
         if prev_button:
             st.session_state.selected_num -= 1
-            question_container.empty()
-            question_display(session, st.session_state.selected_num)
+            st.experimental_rerun()
         if next_button:
             st.session_state.selected_num += 1
-            question_container.empty()
-            question_display(session, st.session_state.selected_num)
+            st.experimental_rerun()
         if submit_button:
             try:
                 session.table("qna.pro.question").update(
