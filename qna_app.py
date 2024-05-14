@@ -31,10 +31,7 @@ def question_display(q_num, session):
         return  # Exit the function to prevent errors
 
     pd_df = my_dataframe.toPandas()
-    # st.write(selected_num)
-    # st.markdown(f'<p style="font-size:20px; color:#42f587;"><b>{selected_num}</b></p>', unsafe_allow_html=True)
-    st.markdown(f'<b style="font-size:24px;">NO. {selected_num}</b>', unsafe_allow_html=True)
-
+    st.markdown(f'<b style="font-size:24px; color:#42f587;">NO. {selected_num}</b>', unsafe_allow_html=True)
     st.write(pd_df['Q_TEXT'][0])
 
     selected_options = get_option_selector(session, selected_num)
@@ -44,7 +41,16 @@ def question_display(q_num, session):
     for option in selected_options:
         st.write(option)
 
-    return selected_options
+    # Add buttons to navigate to previous and next questions
+    if selected_num > 1:
+        if st.button(f"Previous question ({selected_num - 1})", key=f"prev_{selected_num}"):
+            q_num = selected_num - 1
+    if selected_num < 1100:
+        if st.button(f"Next question ({selected_num + 1})", key=f"next_{selected_num}"):
+            q_num = selected_num + 1
+
+    return q_num
+
 
 
 
@@ -103,9 +109,17 @@ session = cnx.session()
 
 mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"))
 
-if mode == "Review":
-    review_mode(q_num, session)
-elif mode == "Sequence":
-    seq_mode(q_num, session)
-elif mode == "Test":
-    test_mode(q_num, session)
+# if mode == "Review":
+#     review_mode(q_num, session)
+# elif mode == "Sequence":
+#     seq_mode(q_num, session)
+# elif mode == "Test":
+#     test_mode(q_num, session)
+
+# Initialize selected_num to the first question number
+selected_num = 1
+
+# Loop to display questions until the user selects a different mode
+while mode == "Review":
+    selected_num = question_display(selected_num, session)
+    mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"))
