@@ -22,35 +22,28 @@ def get_option_selector(session, q_num):
     return selected_options
 
 
-def question_display(q_num, session):
-    st.subheader("Question Details:")
-    selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
+def question_display(q_num, session, question_container):
+    with question_container:
+        st.subheader("Question Details:")
+        selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
 
-    my_dataframe = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num)
+        my_dataframe = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num)
 
-    # Handling missing question
-    if my_dataframe.count() == 0:
-        st.warning("Question not found.")
-        return  # Exit the function to prevent errors
+        # Handling missing question
+        if my_dataframe.count() == 0:
+            st.warning("Question not found.")
+            return  # Exit the function to prevent errors
 
-    pd_df = my_dataframe.toPandas()
-    st.markdown(f'<b style="font-size:24px; color:#42f587;">NO. {selected_num}</b>', unsafe_allow_html=True)
-    st.write(pd_df['Q_TEXT'][0])
+        pd_df = my_dataframe.toPandas()
+        st.markdown(f'<b style="font-size:24px; color:#42f587;">NO. {selected_num}</b>', unsafe_allow_html=True)
+        st.write(pd_df['Q_TEXT'][0])
 
-    selected_options = get_option_selector(session, selected_num)
+        selected_options = get_option_selector(session, selected_num)
 
-    # Display the selected options
-    st.write("Selected options:")
-    for option in selected_options:
-        st.write(option)
-
-    # Add buttons to navigate to previous and next questions
-    if selected_num > 1:
-        if st.button(f"Previous question ({selected_num - 1})", key=f"prev_{selected_num}"):
-            q_num.text_input("Enter your question number:", str(selected_num - 1))
-    if selected_num < 1100:
-        if st.button(f"Next question ({selected_num + 1})", key=f"next_{selected_num}"):
-            q_num.text_input("Enter your question number:", str(selected_num + 1))
+        # Display the selected options
+        st.write("Selected options:")
+        for option in selected_options:
+            st.write(option)
 
 
 
@@ -58,8 +51,13 @@ def question_display(q_num, session):
 
 def review_mode(q_num, session):
     with st.container():  # Creates a container for Review mode
-        question_display(q_num, session)
         selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
+
+        # Create a container for the question display and buttons
+        question_container = st.container()
+
+        # Display the question details
+        question_display(selected_num, session, question_container)
 
         # Get the correct answer from the question table
         correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num).select(col("CORRECT_ANSWER")).collect()[0][0]
@@ -72,6 +70,16 @@ def review_mode(q_num, session):
         user_answer = st.text_input("Enter your answer:", "")
         user_topic = st.text_input("Enter your topic (if any):", "")
         user_comment = st.text_input("Enter your comment (if any):", "")
+
+        # Add buttons to navigate to previous and next questions
+        if selected_num > 1:
+            if st.button(f"Previous question ({selected_num - 1})", key=f"prev_{selected_num}"):
+                question_container.empty()  # Clear the container
+                question_display(selected_num - 1, session, question_container)
+        if selected_num < 1100:
+            if st.button(f"Next question ({selected_num + 1})", key=f"next_{selected_num}"):
+                question_container.empty()  # Clear the container
+                question_display(selected_num + 1, session, question_container)
 
         st.subheader("Update Section:")
         # Submit button
@@ -89,6 +97,9 @@ def review_mode(q_num, session):
             ).collect()
 
             st.success("Update successful!")
+
+        
+
 
 def seq_mode(q_num, session):
     with st.container():  # Creates a container for Sequence mode
@@ -111,18 +122,11 @@ session = cnx.session()
 
 mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"))
 
-# if mode == "Review":
-#     review_mode(q_num, session)
-# elif mode == "Sequence":
-#     seq_mode(q_num, session)
-# elif mode == "Test":
-#     test_mode(q_num, session)
-
-# Initialize selected_num to the first question number
-selected_num = 1
-
-# Loop to display questions until the user selects a different mode
-while mode == "Review":
-    question_display(str(selected_num), session)
-    mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"))
+if mode == "Review":
+    review_mode(q_num, session)
+elif mode == "Sequence":
+    seq_mode(q_num, session)
+elif mode == "Test":
+    test_mode(q_num, session)
+ 
 
