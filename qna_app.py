@@ -45,8 +45,11 @@ def review_mode(session):
 
         correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num).select(col("CORRECT_ANSWER")).collect()[0][0]
 
+        # Format the correct answer
+        formatted_correct_answer = ', '.join([f"<b>{answer}</b>" for answer in correct_answer.split(',')])
+        
         st.subheader("Correct Answer:")
-        st.write(correct_answer)
+        st.markdown(formatted_correct_answer, unsafe_allow_html=True)
 
         col1, col2, col3 = st.columns([1, 1, 2])
         prev_button = next_button = None
