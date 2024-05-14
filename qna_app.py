@@ -31,7 +31,9 @@ def question_display(q_num, session):
         return  # Exit the function to prevent errors
 
     pd_df = my_dataframe.toPandas()
-    st.write(selected_num)
+    # st.write(selected_num)
+    st.markdown(f'<b><font size="5">{selected_num}</font></b>', unsafe_allow_html=True)
+
     st.write(pd_df['Q_TEXT'][0])
 
     selected_options = get_option_selector(session, selected_num)
