@@ -31,7 +31,8 @@ def question_display(session, q_num):
 
     selected_options = get_option_selector(session, q_num)
 
-    st.write("Selected options:")
+    # st.write("Selected options:")
+    st.subheader("Selected options:")
     for option in selected_options:
         st.write(option)
 
