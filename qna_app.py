@@ -68,38 +68,49 @@ def review_mode(q_num, session):
         col1, col2, col3 = st.columns([1, 1, 2])
         with col1:
             if selected_num > 1:
-                if st.button(f"Previous question ({selected_num - 1})", key=f"prev_{selected_num}"):
-                    st.session_state.selected_num -= 1
-                    question_container.empty()  # Clear the container
-                    question_display(selected_num, session, question_container)
+                prev_button = st.button(f"Previous question ({selected_num - 1})", key=f"prev_{selected_num}")
         with col2:
             if selected_num < 1100:
-                if st.button(f"Next question ({selected_num + 1})", key=f"next_{selected_num}"):
-                    st.session_state.selected_num += 1
-                    question_container.empty()  # Clear the container
-                    question_display(selected_num, session, question_container)
+                next_button = st.button(f"Next question ({selected_num + 1})", key=f"next_{selected_num}")
+
+        # Create empty space widgets to position the buttons above the update section
+        empty_col1, empty_col2, empty_col3 = st.columns([1, 1, 2])
+        with empty_col1:
+            st.empty()
+        with empty_col2:
+            st.empty()
 
         # Get user's answer and topic input
         user_answer = st.text_input("Enter your answer:", "")
         user_topic = st.text_input("Enter your topic (if any):", "")
         user_comment = st.text_input("Enter your comment (if any):", "")
 
-        with col3:
-            # Submit button
-            if st.button("Submit Update"):
-                # Update the question table with user's answer, topic, and comment
-                session.table("qna.pro.question").update(
-                    values={"CORRECT_ANSWER": user_answer, "TOPIC": user_topic, "COMMENT": user_comment},
-                    filter=col("Q_NUM") == selected_num
-                ).collect()
+        # Submit button
+        submit_button = st.button("Submit Update")
 
-                # Update the options table with user's answer
-                session.table("qna.pro.options").update(
-                    values={"OPTION": user_answer},
-                    filter=(col("Q_NUM") == selected_num) & (col("OPTION") == correct_answer)
-                ).collect()
+        # Check if buttons are clicked and update the question display accordingly
+        if prev_button:
+            st.session_state.selected_num -= 1
+            question_container.empty()  # Clear the container
+            question_display(selected_num, session, question_container)
+        if next_button:
+            st.session_state.selected_num += 1
+            question_container.empty()  # Clear the container
+            question_display(selected_num, session, question_container)
+        if submit_button:
+            # Update the question table with user's answer, topic, and comment
+            session.table("qna.pro.question").update(
+                values={"CORRECT_ANSWER": user_answer, "TOPIC": user_topic, "COMMENT": user_comment},
+                filter=col("Q_NUM") == selected_num
+            ).collect()
 
-                st.success("Update successful!")
+            # Update the options table with user's answer
+            session.table("qna.pro.options").update(
+                values={"OPTION": user_answer},
+                filter=(col("Q_NUM") == selected_num) & (col("OPTION") == correct_answer)
+            ).collect()
+
+            st.success("Update successful!")
 
 
 def seq_mode(q_num, session):
