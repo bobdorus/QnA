@@ -45,15 +45,13 @@ def question_display(q_num, session):
         st.write(option)
 
     # Add buttons to navigate to previous and next questions
-    # Add buttons to navigate to previous and next questions
     if selected_num > 1:
         if st.button(f"Previous question ({selected_num - 1})", key=f"prev_{selected_num}"):
-            question_display(selected_num - 1, session)
+            q_num.text_input("Enter your question number:", str(selected_num - 1))
     if selected_num < 1100:
         if st.button(f"Next question ({selected_num + 1})", key=f"next_{selected_num}"):
-            question_display(selected_num + 1, session)
+            q_num.text_input("Enter your question number:", str(selected_num + 1))
 
-    return q_num
 
 
 
@@ -125,5 +123,6 @@ selected_num = 1
 
 # Loop to display questions until the user selects a different mode
 while mode == "Review":
-    selected_num = question_display(selected_num, session)
+    question_display(str(selected_num), session)
     mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"))
+
