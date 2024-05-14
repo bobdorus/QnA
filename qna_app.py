@@ -62,6 +62,7 @@ def review_mode(q_num, session):
         user_topic = st.text_input("Enter your topic (if any):", "")
         user_comment = st.text_input("Enter your comment (if any):", "")
 
+        st.subheader("Update Section:")
         # Submit button
         if st.button("Submit Update"):
             # Update the question table with user's answer, topic, and comment
