@@ -1,5 +1,7 @@
 import streamlit as st
-from snowflake.snowpark.functions import col 
+from snowflake.snowpark.functions import col
+import pandas as pd
+import random
 
 """
 Question:
@@ -10,78 +12,50 @@ Question:
     # COMMENT
 """
 
-def review_mode(q_num, cnx):
-    st.subheader("Question Details:")
-    selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
 
-    my_dataframe = session.table("qna.pro.question")
+def review_mode(q_num, session):
+    with st.container():  # Creates a container for Review mode
+        st.subheader("Question Details:")
+        selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
 
-    # st.dataframe(data=my_dataframe, use_container_width=True)
-    pd_df=my_dataframe.to_pandas() 
+        my_dataframe = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num)
 
-    st.write(selected_num)
-    st.write(pd_df['Q_TEXT'])  # Assuming question_text is fetched from your database
-    # st.dataframe(options_df)  # Assuming options_df is a DataFrame with options 
- 
+        # Handling missing question
+        if my_dataframe.count() == 0:
+            st.warning("Question not found.")
+            return  # Exit the function to prevent errors
 
-    
+        pd_df = my_dataframe.toPandas()
+        st.write(selected_num)
+        st.write(pd_df['Q_TEXT'][0])
 
-    # if st.button("Submit"):
-    # if selected_option == correct_answer:
-    #     st.success("Correct!")
-    # else:
-    #     st.error(f"Incorrect. The correct answer is: {correct_answer}")
-    
-    # with st.form("update_form"):
-    # new_answer = st.text_input("Enter your answer")
-    # new_topic = st.text_input("Enter your topic")
-    # new_comment = st.text_area("Enter your comment (if any)")
+        options_df = session.table("qna.pro.options").filter(col("Q_NUM") == selected_num).toPandas()
+        st.dataframe(options_df)
 
-    # if st.form_submit_button("Submit Update"):
-    #     # Code to update the database with the new values
-    #     st.success("Update submitted successfully!")
+def seq_mode(q_num, session):
+    with st.container():  # Creates a container for Sequence mode
+        st.write("implement later")
 
-def seq_mode(q_num, cnx): 
-    st.subheader("Question Details:")
-    selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
+def test_mode(q_num, session):
+    with st.container():  # Creates a container for Test mode
+        st.write("implement later")
 
-    my_dataframe = session.table("qna.pro.question")
-
-    # st.dataframe(data=my_dataframe, use_container_width=True)
-    pd_df=my_dataframe.to_pandas() 
-
-    st.write(selected_num)
-    st.write(pd_df['Q_TEXT']) 
-
-def test_mode(q_num, cnx): # randomize q value 
-    st.subheader("Question Details:")
-    selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
-
-    my_dataframe = session.table("qna.pro.question")
-
-    # st.dataframe(data=my_dataframe, use_container_width=True)
-    pd_df=my_dataframe.to_pandas() 
-
-    st.write(selected_num)
-    st.write(pd_df['Q_TEXT']) 
-
-
+# Main App
 st.title(":snowflake: Question & Answer App :snowflake:")
-st.markdown("<style>div.block-container{text-align: center;}</style>", unsafe_allow_html=True) 
-st.write(
-        """Choose your question or leave it empty which will start with the 1st question.
-        """
-    )
+st.markdown("<style>div.block-container{text-align: center;}</style>", unsafe_allow_html=True)
+st.write("Choose your question or leave it empty to start with the 1st question.")
 
-q_num = st.text_input("Enter your question number:") 
+q_num = st.text_input("Enter your question number:")
+
+# Snowflake Connection (outside the mode selection)
 cnx = st.connection('snowflake')
 session = cnx.session()
+
 mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"))
 
 if mode == "Review":
-    review_mode(q_num, cnx)
-elif mode == 'Sequence': 
-    seq_mode(q_num, cnx)
-elif mode == 'Test': 
-    test_mode(q_num, cnx)
-
+    review_mode(q_num, session)
+elif mode == "Sequence":
+    seq_mode(q_num, session)
+elif mode == "Test":
+    test_mode(q_num, session)
