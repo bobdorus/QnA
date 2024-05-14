@@ -48,28 +48,19 @@ def get_option_selector(session, q_num):
 #     if selected_num < 1100:
 #         st.button(f"Next (Question {selected_num + 1})", key="next", on_click=question_display, args=(str(selected_num + 1), session))
 
-def question_display(q_num, session):
-    st.subheader("Question Details:")
-    selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
+def get_option_selector(session, q_num):
+    options_df = session.table("qna.pro.options").filter(col("Q_NUM") == q_num).toPandas()
+    correct_answer_len = len(session.table("qna.pro.question").filter(col("Q_NUM") == q_num).select("CORRECT_ANSWER").collect()[0][0])
 
-    my_dataframe = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num)
+    if correct_answer_len == 1:
+        # Single select
+        selected_option = st.radio("Select an option", [f"{option}: {text}" for option, text in zip(options_df["OPTION"], options_df["TEXT"])])
+        selected_options = [selected_option]
+    else:
+        # Multiple select
+        selected_options = st.multiselect("Select one or more options", [f"{option}: {text}" for option, text in zip(options_df["OPTION"], options_df["TEXT"])])
 
-    # Handling missing question
-    if my_dataframe.count() == 0:
-        st.warning("Question not found.")
-        return  # Exit the function to prevent errors
-
-    pd_df = my_dataframe.toPandas()
-    st.write(selected_num)
-    st.write(pd_df['Q_TEXT'][0])
-
-    selected_options = get_option_selector(session, selected_num)
-
-    # Display the selected options
-    st.write("Selected options:")
-    for option in selected_options:
-        st.write(option)
-
+    return selected_options
 
 
 
