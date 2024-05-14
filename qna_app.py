@@ -22,14 +22,12 @@ def get_option_selector(session, q_num):
     return selected_options
 
 
-def question_display(q_num, session, question_container):
+def question_display(selected_num, session, question_container):
     with question_container:
         st.subheader("Question Details:")
-        selected_num = int(q_num) if q_num and 0 < int(q_num) < 1100 else 1
-
-        my_dataframe = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num)
 
         # Handling missing question
+        my_dataframe = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num)
         if my_dataframe.count() == 0:
             st.warning("Question not found.")
             return  # Exit the function to prevent errors
@@ -44,9 +42,6 @@ def question_display(q_num, session, question_container):
         st.write("Selected options:")
         for option in selected_options:
             st.write(option)
-
-
-
 
 
 def review_mode(q_num, session):
@@ -105,8 +100,6 @@ def review_mode(q_num, session):
                 ).collect()
 
                 st.success("Update successful!")
-
-        
 
 
 def seq_mode(q_num, session):
