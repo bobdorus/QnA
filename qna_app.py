@@ -77,9 +77,9 @@ def update_section(session, selected_num, selected_options, correct_answer):
                 correct_answer_old = correct_answer
 
             # Update question_corrected table
-            session.table("QNA.pro.Question_Corrected").update(
+            session.table("QNA.pro.Question_Corrected").filter(col("Q_NUM") == selected_num).update(
                 {"CORRECT_ANSWER": user_answer, "TOPIC": user_topic, "COMMENT": user_comment}
-            ).where(col("Q_NUM") == selected_num).collect()
+            ).collect()
 
             # Log the update in the UPDATE_LOG_TBL
             session.table("QNA.pro.UPDATE_LOG_TBL").insert(
@@ -97,6 +97,11 @@ def update_section(session, selected_num, selected_options, correct_answer):
             st.success("Update successful!")
         except Exception as e:
             st.error(f"Update failed: {str(e)}")
+
+    # Display change log
+    st.subheader("Change Log")
+    change_log_df = session.table("QNA.pro.UPDATE_LOG_TBL").filter(col("Q_NUM") == selected_num).toPandas()
+    st.dataframe(change_log_df)
 
 def review_mode(session):
     selected_num = st.session_state.selected_num
