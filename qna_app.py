@@ -172,7 +172,8 @@ def seq_mode(session, seq_question_num):
             st.session_state.seq_question_num += 1
         st.session_state.user_topic = []
         st.session_state.user_comment = ""
-        st.experimental_rerun()
+        st.session_state.rerun_seq_mode = True  # Signal rerun after state updates
+        st.experimental_rerun()  # Rerun only when moving to the next question
 
     with question_container:
         selected_options = question_display(session, seq_question_num)
@@ -185,15 +186,16 @@ def seq_mode(session, seq_question_num):
         user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
         if user_answer == correct_answer:
             st.session_state.score += 1
-
-        # Update the sequence question number
-        if seq_question_num < MAX:
-            st.session_state.seq_question_num += 1
-        st.session_state.rerun_seq_mode = True
+        st.session_state.rerun_seq_mode = True  # Signal rerun after state updates
         st.experimental_rerun()  # Rerun only when moving to the next question
 
     st.text(f"Questions Completed: {st.session_state.completed_questions}")
     st.text(f"Score: {st.session_state.score}")
+
+    # Conditional rerun after state updates
+    if st.session_state.rerun_seq_mode:
+        st.session_state.rerun_seq_mode = False
+        st.experimental_rerun()  # Rerun after state updates
 
 def reset_seq_state():
     st.session_state.seq_question_num = MIN
@@ -267,7 +269,6 @@ elif st.session_state.selected_mode == "Sequence":
         reset_seq_state()
         st.session_state.show_seq_container = True
         st.session_state.rerun_seq_mode = False  # Prevent subsequent reruns
-        st.experimental_rerun()  # Rerun to show the container
 
     if st.session_state.get('show_seq_container', False):  # Only show if the flag is set
         with seq_container:
