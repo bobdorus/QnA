@@ -36,7 +36,7 @@ def question_display(session, q_num):
     my_dataframe = session.table("qna.pro.question").filter(col("Q_NUM") == q_num)
     if my_dataframe.count() == 0:
         st.warning("Question not found.")
-        return
+        return None
 
     pd_df = my_dataframe.toPandas()
     st.markdown(f'<b style="font-size:24px; color:#42f587;">NO. {q_num}</b>', unsafe_allow_html=True)
@@ -106,12 +106,13 @@ def update_section(session, selected_num, selected_options, correct_answer):
     st.dataframe(change_log_df)
 
 def review_mode(session):
-    selected_num = st.session_state.review_selected_num
+    with st.container():
+        selected_num = st.session_state.review_selected_num
 
-    question_container = st.container()
-
-    with question_container:
         selected_options = question_display(session, selected_num)
+
+        if selected_options is None:
+            return
 
         correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num).select("CORRECT_ANSWER").collect()[0][0]
 
@@ -150,44 +151,42 @@ def review_mode(session):
         update_section(session, selected_num, selected_options, correct_answer)
 
 def seq_mode(session):
-    seq_question_num = st.session_state.seq_question_num
+    with st.container():
+        seq_question_num = st.session_state.seq_question_num
 
-    question_container = st.container()
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            prev_button = st.button(f"Prev ({seq_question_num - 1})", key=f"prev_{seq_question_num}") if seq_question_num > MIN else None
+        with col2:
+            st.empty()
+        with col3:
+            next_button = st.button(f"Next ({seq_question_num + 1})", key=f"next_{seq_question_num}") if seq_question_num < MAX else None
 
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        prev_button = st.button(f"Prev ({seq_question_num - 1})", key=f"prev_{seq_question_num}") if seq_question_num > MIN else None
-    with col2:
-        st.empty()
-    with col3:
-        next_button = st.button(f"Next ({seq_question_num + 1})", key=f"next_{seq_question_num}") if seq_question_num < MAX else None
+        if prev_button or next_button:
+            if prev_button:
+                st.session_state.seq_question_num -= 1
+            if next_button:
+                st.session_state.seq_question_num += 1
+            st.session_state.selected_options = []
+            st.experimental_rerun()
 
-    if prev_button or next_button:
-        if prev_button:
-            st.session_state.seq_question_num -= 1
-        if next_button:
-            st.session_state.seq_question_num += 1
-        st.session_state.selected_options = []
-        st.experimental_rerun()
-
-    with question_container:
         selected_options = question_display(session, seq_question_num)
 
-    if selected_options is None:
-        return
+        if selected_options is None:
+            return
 
-    submit_button = st.button("Submit")
+        submit_button = st.button("Submit")
 
-    if submit_button:
-        st.session_state.completed_questions += 1
-        correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == seq_question_num).select("CORRECT_ANSWER").collect()[0][0]
-        user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
-        if user_answer == correct_answer:
-            st.session_state.score += 1
-        st.experimental_rerun()
+        if submit_button:
+            st.session_state.completed_questions += 1
+            correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == seq_question_num).select("CORRECT_ANSWER").collect()[0][0]
+            user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
+            if user_answer == correct_answer:
+                st.session_state.score += 1
+            st.experimental_rerun()
 
-    st.text(f"Questions Completed: {st.session_state.completed_questions}")
-    st.text(f"Score: {st.session_state.score}")
+        st.text(f"Questions Completed: {st.session_state.completed_questions}")
+        st.text(f"Score: {st.session_state.score}")
 
 def reset_seq_state():
     st.session_state.seq_question_num = MIN
