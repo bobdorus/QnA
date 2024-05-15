@@ -57,6 +57,8 @@ def update_section(session, selected_num, selected_options, correct_answer):
         st.write(option)
 
     user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
+
+    # Format correct_answer as comma-separated characters
     formatted_correct_answer = ', '.join([char for char in correct_answer])
     st.text(f"Current Correct Answer: {formatted_correct_answer}")
 
@@ -78,22 +80,21 @@ def update_section(session, selected_num, selected_options, correct_answer):
                 correct_answer_old = correct_answer
 
             # Update question_corrected table
-            session.table("QNA.pro.Question_Corrected").filter(col("Q_NUM") == selected_num).update(
-                {"CORRECT_ANSWER": user_answer, "TOPIC": user_topic, "COMMENT": user_comment}
-            ).collect()
+            update_query = f"""
+                UPDATE QNA.pro.Question_Corrected
+                SET CORRECT_ANSWER = '{user_answer}', TOPIC = '{user_topic}', COMMENT = '{user_comment}'
+                WHERE Q_NUM = {selected_num}
+            """
+            session.sql(update_query).collect()
 
             # Log the update in the UPDATE_LOG_TBL
-            session.table("QNA.pro.UPDATE_LOG_TBL").insert(
-                values={
-                    "Q_NUM": selected_num,
-                    "Q_TIMESTAMP": datetime.datetime.now(),
-                    "Q_TEXT": session.table("QNA.pro.question").filter(col("Q_NUM") == selected_num).select("Q_TEXT").collect()[0][0],
-                    "USER_ID": user_id,
-                    "CORRECT_ANSWER_OLD": correct_answer_old,
-                    "CORRECT_ANSWER_NEW": user_answer,
-                    "COMMENT": user_comment
-                }
-            ).collect()
+            insert_query = f"""
+                INSERT INTO QNA.pro.UPDATE_LOG_TBL (Q_NUM, Q_TIMESTAMP, Q_TEXT, USER_ID, CORRECT_ANSWER_OLD, CORRECT_ANSWER_NEW, COMMENT)
+                SELECT {selected_num}, '{datetime.datetime.now()}', Q_TEXT, '{user_id}', '{correct_answer_old}', '{user_answer}', '{user_comment}'
+                FROM QNA.pro.question
+                WHERE Q_NUM = {selected_num}
+            """
+            session.sql(insert_query).collect()
 
             st.success("Update successful!")
         except Exception as e:
@@ -113,7 +114,7 @@ def review_mode(session):
         selected_options = question_display(session, selected_num)
 
         correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num).select("CORRECT_ANSWER").collect()[0][0]
-        formatted_correct_answer = ""
+
         # Format the correct answer
         if len(correct_answer) > 1:
             formatted_correct_answer = ', '.join([f"<b>{char}</b>" for char in correct_answer])
