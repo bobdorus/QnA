@@ -174,6 +174,7 @@ def seq_mode(session):
             st.session_state.selected_num += 1
         st.session_state.user_topic = []
         st.session_state.user_comment = ""
+        st.session_state.completed_questions = 0  # Reset here
         st.experimental_rerun()
 
     with question_container:
@@ -233,7 +234,7 @@ if change_question_button:
             st.session_state.selected_num = q_num_int
             st.session_state.user_topic = []
             st.session_state.user_comment = ""
-            st.session_state.completed_questions = 0
+            st.session_state.completed_questions = 0  # Reset here
             st.session_state.score = 0
         else:
             st.warning(f"Please enter a question number between {MIN} and {MAX}.")
