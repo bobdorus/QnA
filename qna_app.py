@@ -199,7 +199,7 @@ def reset_state():
     st.session_state.score = 0
 
 def test_mode(session):
-    pass
+    st.write("Test mode is not yet implemented.")
 
 st.title(":snowflake: Question & Answer App :snowflake:")
 st.markdown("<style>div.block-container{text-align: center;}</style>", unsafe_allow_html=True)
@@ -232,10 +232,13 @@ if 'selected_num' not in st.session_state:
 mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"), on_change=reset_state)
 
 if mode == "Review":
-    review_mode(session)
+    with st.container():
+        review_mode(session)
 elif mode == "Sequence":
-    seq_mode(session)
+    with st.container():
+        seq_mode(session)
 elif mode == "Test":
-    test_mode(session)
+    with st.container():
+        test_mode(session)
 else:
     st.write("Please select a mode.")
