@@ -162,13 +162,11 @@ def seq_mode(session):
 
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
-        if selected_num > MIN:
-            prev_button = st.button(f"Prev ({selected_num - 1})", key=f"prev_{selected_num}")
+        prev_button = st.button(f"Prev ({selected_num - 1})", key=f"prev_{selected_num}") if selected_num > MIN else None
     with col2:
         st.empty()
     with col3:
-        if selected_num < MAX:
-            next_button = st.button(f"Next ({selected_num + 1})", key=f"next_{selected_num}")
+        next_button = st.button(f"Next ({selected_num + 1})", key=f"next_{selected_num}") if selected_num < MAX else None
 
     if prev_button or next_button:
         if prev_button:
@@ -217,6 +215,8 @@ if change_question_button:
             st.session_state.selected_num = q_num_int
             st.session_state.user_topic = []
             st.session_state.user_comment = ""
+            st.session_state.completed_questions = 0
+            st.session_state.score = 0
             st.experimental_rerun()
         else:
             st.warning(f"Please enter a question number between {MIN} and {MAX}.")
@@ -237,3 +237,5 @@ elif mode == "Sequence":
     seq_mode(session)
 elif mode == "Test":
     test_mode(session)
+else:
+    st.write("Please select a mode.")
