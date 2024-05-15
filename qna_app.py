@@ -192,6 +192,13 @@ def seq_mode(session):
         st.text(f"Questions Completed: {st.session_state.completed_questions}")
         st.text(f"Score: {st.session_state.score}")
 
+def reset_state():
+    st.session_state.selected_num = MIN
+    st.session_state.user_topic = []
+    st.session_state.user_comment = ""
+    st.session_state.completed_questions = 0
+    st.session_state.score = 0
+
 def test_mode(session):
     pass
 
@@ -216,4 +223,16 @@ if change_question_button:
         st.warning("Please enter a valid integer for the question number.")
 
 cnx = st.connection('snowflake')
-session = cnx.session
+session = cnx.session()
+
+if 'selected_num' not in st.session_state:
+    reset_state()
+
+mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"), on_change=reset_state)
+
+if mode == "Review":
+    review_mode(session)
+elif mode == "Sequence":
+    seq_mode(session)
+elif mode == "Test":
+    test_mode(session)
