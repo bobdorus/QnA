@@ -236,6 +236,8 @@ if change_question_button:
             st.session_state.user_comment = ""
             st.session_state.completed_questions = 0  # Reset here
             st.session_state.score = 0
+            if st.session_state.selected_mode == "Review":
+                st.experimental_rerun()  # Ensure rerun for Review mode
         else:
             st.warning(f"Please enter a question number between {MIN} and {MAX}.")
     except ValueError:
@@ -246,15 +248,12 @@ seq_container = st.empty()
 test_container = st.empty()
 
 if st.session_state.selected_mode == "Review":
-    review_container.empty()
     with review_container:
         review_mode(session)
 elif st.session_state.selected_mode == "Sequence":
-    seq_container.empty()
     with seq_container:
         seq_mode(session)
 elif st.session_state.selected_mode == "Test":
-    test_container.empty()
     with test_container:
         test_mode(session)
 else:
