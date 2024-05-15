@@ -203,10 +203,17 @@ def test_mode(session):
 
 st.title(":snowflake: Question & Answer App :snowflake:")
 st.markdown("<style>div.block-container{text-align: center;}</style>", unsafe_allow_html=True)
-st.write("Choose your question or leave it empty to start with the 1st question.")
 
+# Mode selection radio buttons
+mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"), on_change=reset_state)
+
+# Text input for question number
 q_num = st.text_input("Enter your question number:", value="1", key="q_num_input")
 change_question_button = st.button("Change Question")
+
+# Connection to Snowflake
+cnx = st.connection('snowflake')
+session = cnx.session()
 
 if change_question_button:
     try:
@@ -223,13 +230,8 @@ if change_question_button:
     except ValueError:
         st.warning("Please enter a valid integer for the question number.")
 
-cnx = st.connection('snowflake')
-session = cnx.session()
-
 if 'selected_num' not in st.session_state:
     reset_state()
-
-mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"), on_change=reset_state)
 
 review_container = st.empty()
 seq_container = st.empty()
