@@ -136,10 +136,13 @@ def review_mode(session):
             if selected_num < MAX:
                 next_button = st.button(f"Next ({selected_num + 1})", key=f"next_{selected_num}")
 
-        if prev_button or next_button or st.session_state.get("change_question", False):
+        if prev_button or next_button:
+            if prev_button:
+                st.session_state.selected_num -= 1
+            if next_button:
+                st.session_state.selected_num += 1
             st.session_state.user_topic = []
             st.session_state.user_comment = ""
-            st.session_state.change_question = False
             st.experimental_rerun()
 
         update_section(session, selected_num, selected_options, correct_answer)
@@ -164,7 +167,6 @@ if change_question_button:
             st.session_state.selected_num = q_num_int
             st.session_state.user_topic = []
             st.session_state.user_comment = ""
-            st.session_state.change_question = True
             st.experimental_rerun()
         else:
             st.warning(f"Please enter a question number between {MIN} and {MAX}.")
