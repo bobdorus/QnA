@@ -57,7 +57,8 @@ def update_section(session, selected_num, selected_options, correct_answer):
         st.write(option)
 
     user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
-    st.text(f"Current Correct Answer: {correct_answer}")
+    formatted_correct_answer = ', '.join([char for char in correct_answer])
+    st.text(f"Current Correct Answer: {formatted_correct_answer}")
 
     user_topic = st.multiselect("Enter your topic (if any):", TOPICS, key="user_topic")
     user_topic = ', '.join(user_topic)
@@ -145,7 +146,7 @@ def review_mode(session):
             st.session_state.user_comment = ""
             st.experimental_rerun()
 
-        update_section(session, selected_num, selected_options, formatted_correct_answer)
+        update_section(session, selected_num, selected_options, correct_answer)
 
 def seq_mode(session):
     pass
