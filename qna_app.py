@@ -18,15 +18,14 @@ TOPICS = [
 ]
 
 def create_session():
-    # Replace with your actual Snowflake connection parameters
     connection_parameters = {
-        'account': '<account>',
-        'user': '<user>',
-        'password': '<password>',
-        'role': '<role>',
-        'warehouse': '<warehouse>',
-        'database': '<database>',
-        'schema': '<schema>'
+        'account': st.secrets["snowflake"]["account"],
+        'user': st.secrets["snowflake"]["user"],
+        'password': st.secrets["snowflake"]["password"],
+        'role': st.secrets["snowflake"]["role"],
+        'warehouse': st.secrets["snowflake"]["warehouse"],
+        'database': st.secrets["snowflake"]["database"],
+        'schema': st.secrets["snowflake"]["schema"]
     }
     return Session.builder.configs(connection_parameters).create()
 
