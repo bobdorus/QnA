@@ -172,6 +172,8 @@ def seq_mode(session):
             st.session_state.selected_num -= 1
         if next_button:
             st.session_state.selected_num += 1
+        st.session_state.user_topic = []
+        st.session_state.user_comment = ""
         st.experimental_rerun()
 
     with question_container:
@@ -199,11 +201,7 @@ def reset_state():
 
 def reset_mode_state(mode):
     st.session_state.selected_mode = mode
-    st.session_state.selected_num = MIN
-    st.session_state.user_topic = []
-    st.session_state.user_comment = ""
-    st.session_state.completed_questions = 0
-    st.session_state.score = 0
+    reset_state()
     st.experimental_rerun()
 
 def test_mode(session):
@@ -211,6 +209,12 @@ def test_mode(session):
 
 st.title(":snowflake: Question & Answer App :snowflake:")
 st.markdown("<style>div.block-container{text-align: center;}</style>", unsafe_allow_html=True)
+
+# Initialize session state
+if 'selected_mode' not in st.session_state:
+    st.session_state.selected_mode = "Review"
+if 'selected_num' not in st.session_state:
+    reset_state()
 
 # Mode selection radio buttons
 mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"), key="mode_radio", on_change=lambda: reset_mode_state(st.session_state.mode_radio))
@@ -238,23 +242,17 @@ if change_question_button:
     except ValueError:
         st.warning("Please enter a valid integer for the question number.")
 
-if 'selected_mode' not in st.session_state:
-    reset_state()
-
 review_container = st.empty()
 seq_container = st.empty()
 test_container = st.empty()
 
 if st.session_state.selected_mode == "Review":
-    review_container.empty()
     with review_container:
         review_mode(session)
 elif st.session_state.selected_mode == "Sequence":
-    seq_container.empty()
     with seq_container:
         seq_mode(session)
 elif st.session_state.selected_mode == "Test":
-    test_container.empty()
     with test_container:
         test_mode(session)
 else:
