@@ -65,8 +65,8 @@ def update_section(session, selected_num, selected_options, correct_answer):
     user_topic = st.multiselect("Enter your topic (if any):", TOPICS, key="user_topic")
     user_topic = ', '.join(user_topic)
     user_comment = st.text_input("Enter your comment (if any):", "", key="user_comment")
-    user_id = get_current_user_id(session)
-    st.text(f"User ID: {user_id}")
+    # user_id = get_current_user_id(session)
+    # st.text(f"User ID: {user_id}")
 
     submit_button = st.button("Submit Update")
 
