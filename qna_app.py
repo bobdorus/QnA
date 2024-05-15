@@ -106,7 +106,7 @@ def update_section(session, selected_num, selected_options, correct_answer):
     st.dataframe(change_log_df)
 
 def review_mode(session):
-    selected_num = st.session_state.selected_num
+    selected_num = st.session_state.review_selected_num
 
     question_container = st.container()
 
@@ -140,20 +140,17 @@ def review_mode(session):
 
         if prev_button or next_button:
             if prev_button:
-                st.session_state.selected_num -= 1
+                st.session_state.review_selected_num -= 1
             if next_button:
-                st.session_state.selected_num += 1
+                st.session_state.review_selected_num += 1
             st.session_state.user_topic = []
             st.session_state.user_comment = ""
             st.experimental_rerun()
 
         update_section(session, selected_num, selected_options, correct_answer)
 
-def seq_mode(session, seq_question_num):
-    if 'completed_questions' not in st.session_state:
-        st.session_state.completed_questions = 0
-    if 'score' not in st.session_state:
-        st.session_state.score = 0
+def seq_mode(session):
+    seq_question_num = st.session_state.seq_question_num
 
     question_container = st.container()
 
@@ -170,13 +167,14 @@ def seq_mode(session, seq_question_num):
             st.session_state.seq_question_num -= 1
         if next_button:
             st.session_state.seq_question_num += 1
-        st.session_state.user_topic = []
-        st.session_state.user_comment = ""
-        st.session_state.rerun_seq_mode = True  # Signal rerun after state updates
-        st.experimental_rerun()  # Rerun only when moving to the next question
+        st.session_state.selected_options = []
+        st.experimental_rerun()
 
     with question_container:
         selected_options = question_display(session, seq_question_num)
+
+    if selected_options is None:
+        return
 
     submit_button = st.button("Submit")
 
@@ -186,33 +184,29 @@ def seq_mode(session, seq_question_num):
         user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
         if user_answer == correct_answer:
             st.session_state.score += 1
-        st.session_state.rerun_seq_mode = True  # Signal rerun after state updates
-        st.experimental_rerun()  # Rerun only when moving to the next question
+        st.experimental_rerun()
 
     st.text(f"Questions Completed: {st.session_state.completed_questions}")
     st.text(f"Score: {st.session_state.score}")
-
-    # Conditional rerun after state updates
-    if st.session_state.rerun_seq_mode:
-        st.session_state.rerun_seq_mode = False
-        st.experimental_rerun()  # Rerun after state updates
 
 def reset_seq_state():
     st.session_state.seq_question_num = MIN
     st.session_state.completed_questions = 0
     st.session_state.score = 0
-    st.session_state.selected_options = []  # Ensure selected options are cleared
-    st.session_state.rerun_seq_mode = True  # Reset the rerun flag
+    st.session_state.selected_options = []
 
-def reset_state():
-    st.session_state.selected_num = MIN
+def reset_review_state():
+    st.session_state.review_selected_num = MIN
     st.session_state.user_topic = []
     st.session_state.user_comment = ""
-    reset_seq_state()
 
 def reset_mode_state(mode):
-    st.session_state.selected_mode = mode
-    reset_state()
+    if mode == "Review":
+        reset_review_state()
+    elif mode == "Sequence":
+        reset_seq_state()
+    elif mode == "Test":
+        pass
 
 def test_mode(session):
     st.write("Test mode is not yet implemented.")
@@ -223,8 +217,10 @@ st.markdown("<style>div.block-container{text-align: center;}</style>", unsafe_al
 # Initialize session state
 if 'selected_mode' not in st.session_state:
     st.session_state.selected_mode = "Review"
-if 'selected_num' not in st.session_state:
-    reset_state()
+if 'review_selected_num' not in st.session_state:
+    reset_review_state()
+if 'seq_question_num' not in st.session_state:
+    reset_seq_state()
 
 # Mode selection radio buttons
 mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"), key="mode_radio", on_change=lambda: reset_mode_state(st.session_state.mode_radio))
@@ -241,15 +237,11 @@ if change_question_button:
     try:
         q_num_int = int(q_num)
         if MIN <= q_num_int <= MAX:
-            st.session_state.selected_num = q_num_int
-            st.session_state.user_topic = []
-            st.session_state.user_comment = ""
-            st.session_state.completed_questions = 0  # Reset here
-            st.session_state.score = 0
             if st.session_state.selected_mode == "Review":
-                st.experimental_rerun()  # Ensure rerun for Review mode
-            else:
-                st.session_state.rerun_seq_mode = True  # Trigger a rerun if in sequence mode
+                st.session_state.review_selected_num = q_num_int
+            elif st.session_state.selected_mode == "Sequence":
+                st.session_state.seq_question_num = q_num_int
+            st.experimental_rerun()
         else:
             st.warning(f"Please enter a question number between {MIN} and {MAX}.")
     except ValueError:
@@ -259,25 +251,13 @@ review_container = st.empty()
 seq_container = st.empty()
 test_container = st.empty()
 
+# Render the appropriate mode container
 if st.session_state.selected_mode == "Review":
     with review_container:
         review_mode(session)
 elif st.session_state.selected_mode == "Sequence":
-    if 'seq_question_num' not in st.session_state:
-        st.session_state.seq_question_num = MIN  # Initialize if not present
-    if change_question_button or st.session_state.rerun_seq_mode:
-        reset_seq_state()
-        st.session_state.show_seq_container = True
-        st.session_state.rerun_seq_mode = False  # Prevent subsequent reruns
-
-    if st.session_state.get('show_seq_container', False):  # Only show if the flag is set
-        with seq_container:
-            seq_mode(session, st.session_state.seq_question_num)
-    else:
-        seq_container.empty()  # Clear the container if the flag is not set
+    with seq_container:
+        seq_mode(session)
 else:
-    # Clear all containers when not in Review or Sequence modes
-    review_container.empty()
-    seq_container.empty()
     with test_container:
         test_mode(session)
