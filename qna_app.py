@@ -1,6 +1,7 @@
 import streamlit as st
 from snowflake.snowpark.functions import col
 import pandas as pd
+import datetime
 
 MIN = 1
 MAX = 1099
@@ -31,10 +32,54 @@ def question_display(session, q_num):
 
     selected_options = get_option_selector(session, q_num)
 
-    # st.write("Selected options:")
-    st.subheader("Selected options:")
+    return selected_options
+
+def update_section(session, selected_num, selected_options, correct_answer):
+    st.subheader("Update the answer for question:")
+    st.text("Selected Options:")
     for option in selected_options:
         st.write(option)
+
+    user_answer = ', '.join(selected_options)
+    st.text(f"Current Correct Answer: {user_answer}")
+
+    user_topic = st.text_input("Enter your topic (if any):", "")
+    user_comment = st.text_input("Enter your comment (if any):", "")
+    user_id = st.text_input("Enter your user ID:", "")
+
+    submit_button = st.button("Submit Update")
+
+    if submit_button:
+        try:
+            # Check if it's the first update
+            corrected_answer_query = session.table("QNA.pro.Question_Corrected").filter(col("Q_NUM") == selected_num).select("CORRECT_ANSWER")
+            if corrected_answer_query.count() > 0:
+                correct_answer_old = corrected_answer_query.collect()[0][0]
+            else:
+                correct_answer_old = correct_answer
+
+            # Update question_corrected table
+            session.table("QNA.pro.Question_Corrected").update(
+                values={"CORRECT_ANSWER": user_answer, "TOPIC": user_topic, "COMMENT": user_comment},
+                filter=col("Q_NUM") == selected_num
+            ).collect()
+
+            # Log the update in the UPDATE_LOG_TBL
+            session.table("QNA.pro.UPDATE_LOG_TBL").insert(
+                values={
+                    "Q_NUM": selected_num,
+                    "Q_TIMESTAMP": datetime.datetime.now(),
+                    "Q_TEXT": session.table("QNA.pro.question").filter(col("Q_NUM") == selected_num).select("Q_TEXT").collect()[0][0],
+                    "USER_ID": user_id,
+                    "CORRECT_ANSWER_OLD": correct_answer_old,
+                    "CORRECT_ANSWER_NEW": user_answer,
+                    "COMMENT": user_comment
+                }
+            ).collect()
+
+            st.success("Update successful!")
+        except Exception as e:
+            st.error(f"Update failed: {str(e)}")
 
 def review_mode(session):
     selected_num = st.session_state.selected_num
@@ -42,9 +87,9 @@ def review_mode(session):
     question_container = st.container()
 
     with question_container:
-        question_display(session, selected_num)
+        selected_options = question_display(session, selected_num)
 
-        correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num).select(col("CORRECT_ANSWER")).collect()[0][0]
+        correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num).select("CORRECT_ANSWER").collect()[0][0]
 
         # Format the correct answer
         if len(correct_answer) > 1:
@@ -69,33 +114,14 @@ def review_mode(session):
             if selected_num < MAX:
                 next_button = st.button(f"Next ({selected_num + 1})", key=f"next_{selected_num}")
 
-        user_answer = st.text_input("Enter your answer:", "")
-        user_topic = st.text_input("Enter your topic (if any):", "")
-        user_comment = st.text_input("Enter your comment (if any):", "")
-
-        submit_button = st.button("Submit Update")
-
         if prev_button:
             st.session_state.selected_num -= 1
             st.experimental_rerun()
         if next_button:
             st.session_state.selected_num += 1
             st.experimental_rerun()
-        if submit_button:
-            try:
-                session.table("qna.pro.question").update(
-                    values={"CORRECT_ANSWER": user_answer, "TOPIC": user_topic, "COMMENT": user_comment},
-                    filter=col("Q_NUM") == selected_num
-                ).collect()
 
-                session.table("qna.pro.options").update(
-                    values={"OPTION": user_answer},
-                    filter=(col("Q_NUM") == selected_num) & (col("OPTION") == correct_answer)
-                ).collect()
-
-                st.success("Update successful!")
-            except Exception as e:
-                st.error(f"Update failed: {str(e)}")
+        update_section(session, selected_num, selected_options, correct_answer)
 
 def seq_mode(session):
     pass
