@@ -59,9 +59,9 @@ def update_section(session, selected_num, selected_options, correct_answer):
     user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
     st.text(f"Current Correct Answer: {user_answer}")
 
-    user_topic = st.multiselect("Enter your topic (if any):", TOPICS)
+    user_topic = st.multiselect("Enter your topic (if any):", TOPICS, key="user_topic")
     user_topic = ', '.join(user_topic)
-    user_comment = st.text_input("Enter your comment (if any):", "")
+    user_comment = st.text_input("Enter your comment (if any):", "", key="user_comment")
     user_id = get_current_user_id(session)
     st.text(f"User ID: {user_id}")
 
@@ -136,11 +136,10 @@ def review_mode(session):
             if selected_num < MAX:
                 next_button = st.button(f"Next ({selected_num + 1})", key=f"next_{selected_num}")
 
-        if prev_button:
-            st.session_state.selected_num -= 1
-            st.experimental_rerun()
-        if next_button:
-            st.session_state.selected_num += 1
+        if prev_button or next_button or st.session_state.get("change_question", False):
+            st.session_state.user_topic = []
+            st.session_state.user_comment = ""
+            st.session_state.change_question = False
             st.experimental_rerun()
 
         update_section(session, selected_num, selected_options, correct_answer)
@@ -163,6 +162,9 @@ if change_question_button:
         q_num_int = int(q_num)
         if MIN <= q_num_int <= MAX:
             st.session_state.selected_num = q_num_int
+            st.session_state.user_topic = []
+            st.session_state.user_comment = ""
+            st.session_state.change_question = True
             st.experimental_rerun()
         else:
             st.warning(f"Please enter a question number between {MIN} and {MAX}.")
