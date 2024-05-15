@@ -57,7 +57,7 @@ def update_section(session, selected_num, selected_options, correct_answer):
         st.write(option)
 
     user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
-    st.text(f"Current Correct Answer: {user_answer}")
+    st.text(f"Current Correct Answer: {correct_answer}")
 
     user_topic = st.multiselect("Enter your topic (if any):", TOPICS, key="user_topic")
     user_topic = ', '.join(user_topic)
