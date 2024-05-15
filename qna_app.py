@@ -1,5 +1,5 @@
 import streamlit as st
-from snowflake.snowpark.functions import col
+from snowflake.snowpark.functions import Session, col
 import pandas as pd
 import datetime
 
@@ -15,6 +15,20 @@ TOPICS = [
     "Snowflake Account and Security",
     "Snowflake Performance and Tuning"
 ]
+
+# Placeholder Snowflake session initialization
+def create_session():
+    # Placeholder connection parameters; replace with actual Snowflake credentials
+    connection_parameters = {
+        'account': '<account>',
+        'user': '<user>',
+        'password': '<password>',
+        'role': '<role>',
+        'warehouse': '<warehouse>',
+        'database': '<database>',
+        'schema': '<schema>'
+    }
+    return Session.builder.configs(connection_parameters).create()
 
 def get_option_selector(session, q_num):
     options_df = session.table("qna.pro.options").filter(col("Q_NUM") == q_num).toPandas()
@@ -168,7 +182,6 @@ def seq_mode(session):
         if next_button:
             st.session_state.seq_question_num += 1
         st.session_state.selected_options = []
-        st.session_state.rerun_seq_mode = True
         st.experimental_rerun()
 
     with question_container:
@@ -204,7 +217,6 @@ def reset_mode_state(mode):
     elif mode == "Sequence":
         reset_seq_state()
     elif mode == "Test":
-        # Add reset logic for Test mode if needed
         pass
 
 def test_mode(session):
@@ -229,8 +241,7 @@ q_num = st.text_input("Enter your question number:", value="1", key="q_num_input
 change_question_button = st.button("Change Question")
 
 # Connection to Snowflake
-cnx = st.connection('snowflake')
-session = cnx.session()
+session = create_session()
 
 if change_question_button:
     try:
@@ -250,6 +261,7 @@ review_container = st.empty()
 seq_container = st.empty()
 test_container = st.empty()
 
+# Render the appropriate mode container
 if st.session_state.selected_mode == "Review":
     with review_container:
         review_mode(session)
