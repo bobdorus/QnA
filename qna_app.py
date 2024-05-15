@@ -6,9 +6,21 @@ import datetime
 MIN = 1
 MAX = 1099
 
+TOPICS = [
+    "Overview and Architecture",
+    "Virtual Warehouse",
+    "Storage and Protection",
+    "Data Loading and Unloading",
+    "Semi-structured Data",
+    "Snowflake Account and Security",
+    "Snowflake Performance and Tuning"
+]
+
 def get_option_selector(session, q_num):
     options_df = session.table("qna.pro.options").filter(col("Q_NUM") == q_num).toPandas()
     correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == q_num).select("CORRECT_ANSWER").collect()[0][0]
+
+    options_df["TEXT"] = options_df["TEXT"].str.strip()  # Remove leading and trailing spaces
 
     if len(correct_answer) == 1:
         selected_option = st.radio("Select an option", [f"{option}: {text}" for option, text in zip(options_df["OPTION"], options_df["TEXT"])])
@@ -34,18 +46,24 @@ def question_display(session, q_num):
 
     return selected_options
 
+def get_current_user_id(session):
+    user_id_query = session.sql("SELECT CURRENT_USER()").collect()
+    return user_id_query[0][0]
+
 def update_section(session, selected_num, selected_options, correct_answer):
     st.subheader("Update the answer for question:")
     st.text("Selected Options:")
     for option in selected_options:
         st.write(option)
 
-    user_answer = ', '.join(selected_options)
+    user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
     st.text(f"Current Correct Answer: {user_answer}")
 
-    user_topic = st.text_input("Enter your topic (if any):", "")
+    user_topic = st.multiselect("Enter your topic (if any):", TOPICS)
+    user_topic = ', '.join(user_topic)
     user_comment = st.text_input("Enter your comment (if any):", "")
-    user_id = st.text_input("Enter your user ID:", "")
+    user_id = get_current_user_id(session)
+    st.text(f"User ID: {user_id}")
 
     submit_button = st.button("Submit Update")
 
@@ -60,9 +78,8 @@ def update_section(session, selected_num, selected_options, correct_answer):
 
             # Update question_corrected table
             session.table("QNA.pro.Question_Corrected").update(
-                values={"CORRECT_ANSWER": user_answer, "TOPIC": user_topic, "COMMENT": user_comment},
-                filter=col("Q_NUM") == selected_num
-            ).collect()
+                {"CORRECT_ANSWER": user_answer, "TOPIC": user_topic, "COMMENT": user_comment}
+            ).where(col("Q_NUM") == selected_num).collect()
 
             # Log the update in the UPDATE_LOG_TBL
             session.table("QNA.pro.UPDATE_LOG_TBL").insert(
