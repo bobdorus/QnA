@@ -120,7 +120,7 @@ def review_mode(session):
             formatted_correct_answer = ', '.join([f"<b>{char}</b>" for char in correct_answer])
         else:
             formatted_correct_answer = f"<b>{correct_answer}</b>"
-        
+
         st.subheader("Correct Answer:")
         st.markdown(formatted_correct_answer, unsafe_allow_html=True)
 
@@ -202,16 +202,19 @@ def reset_seq_state():
     st.session_state.completed_questions = 0
     st.session_state.score = 0
     st.session_state.selected_options = []  # Ensure selected options are cleared
-    st.session_state.rerun_seq_mode = True  # Reset the rerun flag
+    st.session_state.rerun_seq_mode = False  # Reset the rerun flag
 
 def reset_state():
-    st.session_state.selected_num = MIN
+    st.session
+
+_state.selected_num = MIN
     st.session_state.user_topic = []
     st.session_state.user_comment = ""
     reset_seq_state()
 
 def reset_mode_state(mode):
     st.session_state.selected_mode = mode
+    st.session_state.prev_mode = mode
     reset_state()
 
 def test_mode(session):
@@ -225,6 +228,8 @@ if 'selected_mode' not in st.session_state:
     st.session_state.selected_mode = "Review"
 if 'selected_num' not in st.session_state:
     reset_state()
+if 'prev_mode' not in st.session_state:
+    st.session_state.prev_mode = "Review"
 
 # Mode selection radio buttons
 mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"), key="mode_radio", on_change=lambda: reset_mode_state(st.session_state.mode_radio))
@@ -269,6 +274,7 @@ elif st.session_state.selected_mode == "Sequence":
         reset_seq_state()
         st.session_state.show_seq_container = True
         st.session_state.rerun_seq_mode = False  # Prevent subsequent reruns
+        st.experimental_rerun()  # Rerun to show the container
 
     if st.session_state.get('show_seq_container', False):  # Only show if the flag is set
         with seq_container:
