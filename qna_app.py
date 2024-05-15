@@ -50,7 +50,7 @@ def question_display(session, q_num):
     my_dataframe = session.table("qna.pro.question").filter(col("Q_NUM") == q_num)
     if my_dataframe.count() == 0:
         st.warning("Question not found.")
-        return
+        return None
 
     pd_df = my_dataframe.toPandas()
     st.markdown(f'<b style="font-size:24px; color:#42f587;">NO. {q_num}</b>', unsafe_allow_html=True)
@@ -127,6 +127,9 @@ def review_mode(session):
     with question_container:
         selected_options = question_display(session, selected_num)
 
+        if selected_options is None:
+            return
+
         correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num).select("CORRECT_ANSWER").collect()[0][0]
 
         # Format the correct answer
@@ -186,6 +189,9 @@ def seq_mode(session):
 
     with question_container:
         selected_options = question_display(session, seq_question_num)
+
+    if selected_options is None:
+        return
 
     submit_button = st.button("Submit")
 
