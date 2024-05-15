@@ -172,7 +172,6 @@ def seq_mode(session, seq_question_num):
             st.session_state.seq_question_num += 1
         st.session_state.user_topic = []
         st.session_state.user_comment = ""
-        st.session_state.rerun_seq_mode = True  # Signal rerun after state updates
         st.experimental_rerun()  # Rerun only when moving to the next question
 
     with question_container:
@@ -186,7 +185,6 @@ def seq_mode(session, seq_question_num):
         user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
         if user_answer == correct_answer:
             st.session_state.score += 1
-        st.session_state.rerun_seq_mode = True  # Signal rerun after state updates
         st.experimental_rerun()  # Rerun only when moving to the next question
 
     st.text(f"Questions Completed: {st.session_state.completed_questions}")
@@ -197,18 +195,17 @@ def reset_seq_state():
     st.session_state.completed_questions = 0
     st.session_state.score = 0
     st.session_state.selected_options = []  # Ensure selected options are cleared
-    st.session_state.rerun_seq_mode = False  # Reset the rerun flag
-
-def reset_state():
-    st.session_state.selected_num = MIN
-    st.session_state.user_topic = []
-    st.session_state.user_comment = ""
-    reset_seq_state()
 
 def reset_mode_state(mode):
-    st.session_state.selected_mode = mode
-    st.session_state.prev_mode = mode
-    reset_state()
+    if mode == "Review":
+        st.session_state.selected_num = MIN
+        st.session_state.user_topic = []
+        st.session_state.user_comment = ""
+    elif mode == "Sequence":
+        reset_seq_state()
+    elif mode == "Test":
+        # Add reset logic for Test mode if needed
+        pass
 
 def test_mode(session):
     st.write("Test mode is not yet implemented.")
@@ -220,9 +217,7 @@ st.markdown("<style>div.block-container{text-align: center;}</style>", unsafe_al
 if 'selected_mode' not in st.session_state:
     st.session_state.selected_mode = "Review"
 if 'selected_num' not in st.session_state:
-    reset_state()
-if 'prev_mode' not in st.session_state:
-    st.session_state.prev_mode = "Review"
+    reset_mode_state("Review")
 
 # Mode selection radio buttons
 mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"), key="mode_radio", on_change=lambda: reset_mode_state(st.session_state.mode_radio))
@@ -247,7 +242,8 @@ if change_question_button:
             if st.session_state.selected_mode == "Review":
                 st.experimental_rerun()  # Ensure rerun for Review mode
             else:
-                st.session_state.rerun_seq_mode = True  # Trigger a rerun if in sequence mode
+                st.session_state.seq_question_num = q_num_int
+                st.experimental_rerun()  # Ensure rerun for Sequence mode
         else:
             st.warning(f"Please enter a question number between {MIN} and {MAX}.")
     except ValueError:
@@ -263,18 +259,8 @@ if st.session_state.selected_mode == "Review":
 elif st.session_state.selected_mode == "Sequence":
     if 'seq_question_num' not in st.session_state:
         st.session_state.seq_question_num = MIN  # Initialize if not present
-
-    # Reset sequence state when switching to sequence mode or if a rerun is needed
-    if st.session_state.prev_mode != "Sequence" or st.session_state.rerun_seq_mode:
-        reset_seq_state()
-        st.session_state.rerun_seq_mode = False  # Reset rerun flag
-
     with seq_container:
         seq_mode(session, st.session_state.seq_question_num)
-
-    # Clear the container if the mode is not "Sequence"
-    if st.session_state.selected_mode != "Sequence":
-        seq_container.empty()
 else:
     # Clear all containers when not in Review or Sequence modes
     review_container.empty()
