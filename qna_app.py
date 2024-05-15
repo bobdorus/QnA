@@ -112,7 +112,7 @@ def review_mode(session):
         selected_options = question_display(session, selected_num)
 
         correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num).select("CORRECT_ANSWER").collect()[0][0]
-
+        formatted_correct_answer = ""
         # Format the correct answer
         if len(correct_answer) > 1:
             formatted_correct_answer = ', '.join([f"<b>{char}</b>" for char in correct_answer])
@@ -145,7 +145,7 @@ def review_mode(session):
             st.session_state.user_comment = ""
             st.experimental_rerun()
 
-        update_section(session, selected_num, selected_options, correct_answer)
+        update_section(session, selected_num, selected_options, formatted_correct_answer)
 
 def seq_mode(session):
     pass
