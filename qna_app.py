@@ -120,7 +120,7 @@ def review_mode(session):
             formatted_correct_answer = ', '.join([f"<b>{char}</b>" for char in correct_answer])
         else:
             formatted_correct_answer = f"<b>{correct_answer}</b>"
-
+        
         st.subheader("Correct Answer:")
         st.markdown(formatted_correct_answer, unsafe_allow_html=True)
 
@@ -205,9 +205,7 @@ def reset_seq_state():
     st.session_state.rerun_seq_mode = False  # Reset the rerun flag
 
 def reset_state():
-    st.session
-
-_state.selected_num = MIN
+    st.session_state.selected_num = MIN
     st.session_state.user_topic = []
     st.session_state.user_comment = ""
     reset_seq_state()
