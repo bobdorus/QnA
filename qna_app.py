@@ -231,14 +231,18 @@ if 'selected_num' not in st.session_state:
 
 mode = st.radio("Select Mode:", ("Review", "Sequence", "Test"), on_change=reset_state)
 
+review_container = st.empty()
+seq_container = st.empty()
+test_container = st.empty()
+
 if mode == "Review":
-    with st.container():
+    with review_container:
         review_mode(session)
 elif mode == "Sequence":
-    with st.container():
+    with seq_container:
         seq_mode(session)
 elif mode == "Test":
-    with st.container():
+    with test_container:
         test_mode(session)
 else:
     st.write("Please select a mode.")
