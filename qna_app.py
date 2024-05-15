@@ -160,37 +160,38 @@ def seq_mode(session):
 
     question_container = st.container()
 
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        if selected_num > MIN:
+            prev_button = st.button(f"Prev ({selected_num - 1})", key=f"prev_{selected_num}")
+    with col2:
+        st.empty()
+    with col3:
+        if selected_num < MAX:
+            next_button = st.button(f"Next ({selected_num + 1})", key=f"next_{selected_num}")
+
+    if prev_button or next_button:
+        if prev_button:
+            st.session_state.selected_num -= 1
+        if next_button:
+            st.session_state.selected_num += 1
+        st.experimental_rerun()
+
     with question_container:
         selected_options = question_display(session, selected_num)
 
-        # Initialize buttons to None
-        prev_button = None
-        next_button = None
+    submit_button = st.button("Submit")
 
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col1:
-            if selected_num > MIN:
-                prev_button = st.button(f"Prev ({selected_num - 1})", key=f"prev_{selected_num}")
-        with col2:
-            st.empty()
-        with col3:
-            if selected_num < MAX:
-                next_button = st.button(f"Next ({selected_num + 1})", key=f"next_{selected_num}")
+    if submit_button:
+        st.session_state.completed_questions += 1
+        correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num).select("CORRECT_ANSWER").collect()[0][0]
+        user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
+        if user_answer == correct_answer:
+            st.session_state.score += 1
+        st.experimental_rerun()
 
-        if prev_button or next_button:
-            if prev_button:
-                st.session_state.selected_num -= 1
-            if next_button:
-                st.session_state.selected_num += 1
-                st.session_state.completed_questions += 1
-                correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == selected_num).select("CORRECT_ANSWER").collect()[0][0]
-                user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
-                if user_answer == correct_answer:
-                    st.session_state.score += 1
-            st.experimental_rerun()
-
-        st.text(f"Questions Completed: {st.session_state.completed_questions}")
-        st.text(f"Score: {st.session_state.score}")
+    st.text(f"Questions Completed: {st.session_state.completed_questions}")
+    st.text(f"Score: {st.session_state.score}")
 
 def reset_state():
     st.session_state.selected_num = MIN
