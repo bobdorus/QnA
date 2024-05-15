@@ -51,60 +51,59 @@ def get_current_user_id(session):
     return user_id_query[0][0]
 
 def update_section(session, selected_num, selected_options, correct_answer):
-    with st.container():
-        st.subheader("Update the answer for question:")
-        st.text("Selected Options:")
-        for option in selected_options:
-            st.write(option)
+    st.subheader("Update the answer for question:")
+    st.text("Selected Options:")
+    for option in selected_options:
+        st.write(option)
 
-        user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
+    user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
 
-        # Format correct_answer as comma-separated characters
-        formatted_correct_answer = ', '.join([char for char in correct_answer])
-        st.text(f"Current Correct Answer: {formatted_correct_answer}")
+    # Format correct_answer as comma-separated characters
+    formatted_correct_answer = ', '.join([char for char in correct_answer])
+    st.text(f"Current Correct Answer: {formatted_correct_answer}")
 
-        user_topic = st.multiselect("Enter your topic (if any):", TOPICS, key="user_topic")
-        user_topic = ', '.join(user_topic)
-        user_comment = st.text_input("Enter your comment (if any):", "", key="user_comment")
-        user_id = get_current_user_id(session)
-        st.text(f"User ID: {user_id}")
+    user_topic = st.multiselect("Enter your topic (if any):", TOPICS, key="user_topic")
+    user_topic = ', '.join(user_topic)
+    user_comment = st.text_input("Enter your comment (if any):", "", key="user_comment")
+    user_id = get_current_user_id(session)
+    st.text(f"User ID: {user_id}")
 
-        submit_button = st.button("Submit Update")
+    submit_button = st.button("Submit Update")
 
-        if submit_button:
-            try:
-                # Check if it's the first update
-                corrected_answer_query = session.table("QNA.pro.Question_Corrected").filter(col("Q_NUM") == selected_num).select("CORRECT_ANSWER")
-                if corrected_answer_query.count() > 0:
-                    correct_answer_old = corrected_answer_query.collect()[0][0]
-                else:
-                    correct_answer_old = correct_answer
+    if submit_button:
+        try:
+            # Check if it's the first update
+            corrected_answer_query = session.table("QNA.pro.Question_Corrected").filter(col("Q_NUM") == selected_num).select("CORRECT_ANSWER")
+            if corrected_answer_query.count() > 0:
+                correct_answer_old = corrected_answer_query.collect()[0][0]
+            else:
+                correct_answer_old = correct_answer
 
-                # Update question_corrected table
-                update_query = f"""
-                    UPDATE QNA.pro.Question_Corrected
-                    SET CORRECT_ANSWER = '{user_answer}', TOPIC = '{user_topic}', COMMENT = '{user_comment}'
-                    WHERE Q_NUM = {selected_num}
-                """
-                session.sql(update_query).collect()
+            # Update question_corrected table
+            update_query = f"""
+                UPDATE QNA.pro.Question_Corrected
+                SET CORRECT_ANSWER = '{user_answer}', TOPIC = '{user_topic}', COMMENT = '{user_comment}'
+                WHERE Q_NUM = {selected_num}
+            """
+            session.sql(update_query).collect()
 
-                # Log the update in the UPDATE_LOG_TBL
-                insert_query = f"""
-                    INSERT INTO QNA.pro.UPDATE_LOG_TBL (Q_NUM, Q_TIMESTAMP, Q_TEXT, USER_ID, CORRECT_ANSWER_OLD, CORRECT_ANSWER_NEW, COMMENT)
-                    SELECT {selected_num}, '{datetime.datetime.now()}', Q_TEXT, '{user_id}', '{correct_answer_old}', '{user_answer}', '{user_comment}'
-                    FROM QNA.pro.question
-                    WHERE Q_NUM = {selected_num}
-                """
-                session.sql(insert_query).collect()
+            # Log the update in the UPDATE_LOG_TBL
+            insert_query = f"""
+                INSERT INTO QNA.pro.UPDATE_LOG_TBL (Q_NUM, Q_TIMESTAMP, Q_TEXT, USER_ID, CORRECT_ANSWER_OLD, CORRECT_ANSWER_NEW, COMMENT)
+                SELECT {selected_num}, '{datetime.datetime.now()}', Q_TEXT, '{user_id}', '{correct_answer_old}', '{user_answer}', '{user_comment}'
+                FROM QNA.pro.question
+                WHERE Q_NUM = {selected_num}
+            """
+            session.sql(insert_query).collect()
 
-                st.success("Update successful!")
-            except Exception as e:
-                st.error(f"Update failed: {str(e)}")
+            st.success("Update successful!")
+        except Exception as e:
+            st.error(f"Update failed: {str(e)}")
 
-        # Display change log
-        st.subheader("Change Log")
-        change_log_df = session.table("QNA.pro.UPDATE_LOG_TBL").filter(col("Q_NUM") == selected_num).toPandas()
-        st.dataframe(change_log_df)
+    # Display change log
+    st.subheader("Change Log")
+    change_log_df = session.table("QNA.pro.UPDATE_LOG_TBL").filter(col("Q_NUM") == selected_num).toPandas()
+    st.dataframe(change_log_df)
 
 def review_mode(session):
     selected_num = st.session_state.selected_num
@@ -238,12 +237,15 @@ seq_container = st.empty()
 test_container = st.empty()
 
 if mode == "Review":
+    review_container.empty()
     with review_container:
         review_mode(session)
 elif mode == "Sequence":
+    seq_container.empty()
     with seq_container:
         seq_mode(session)
 elif mode == "Test":
+    test_container.empty()
     with test_container:
         test_mode(session)
 else:
