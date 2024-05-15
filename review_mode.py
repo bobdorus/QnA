@@ -4,7 +4,7 @@ import pandas as pd
 import datetime
 
 MIN = 1
-MAX = 1099
+MAX = 1100
 
 TOPICS = [
     "Overview and Architecture",
