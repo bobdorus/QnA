@@ -261,10 +261,13 @@ elif st.session_state.selected_mode == "Sequence":
         st.session_state.seq_question_num = MIN  # Initialize if not present
     if change_question_button or st.session_state.selected_mode != "Sequence":
         reset_seq_state()
+
+    # Explicitly display the container only when in Sequence mode
     with seq_container:
-        seq_mode(session, st.session_state.seq_question_num)  # Pass the sequence question number
-elif st.session_state.selected_mode == "Test":
+        seq_mode(session, st.session_state.seq_question_num)
+else:
+    # Clear all containers when not in Review or Sequence modes
+    review_container.empty()
+    seq_container.empty()
     with test_container:
         test_mode(session)
-else:
-    st.write("Please select a mode.")
