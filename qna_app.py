@@ -192,11 +192,6 @@ def seq_mode(session, seq_question_num):
     st.text(f"Questions Completed: {st.session_state.completed_questions}")
     st.text(f"Score: {st.session_state.score}")
 
-    # Conditional rerun after state updates
-    if st.session_state.rerun_seq_mode:
-        st.session_state.rerun_seq_mode = False
-        st.experimental_rerun()  # Rerun after state updates
-
 def reset_seq_state():
     st.session_state.seq_question_num = MIN
     st.session_state.completed_questions = 0
@@ -268,17 +263,18 @@ if st.session_state.selected_mode == "Review":
 elif st.session_state.selected_mode == "Sequence":
     if 'seq_question_num' not in st.session_state:
         st.session_state.seq_question_num = MIN  # Initialize if not present
-    if change_question_button or st.session_state.rerun_seq_mode:
-        reset_seq_state()
-        st.session_state.show_seq_container = True
-        st.session_state.rerun_seq_mode = False  # Prevent subsequent reruns
-        st.experimental_rerun()  # Rerun to show the container
 
-    if st.session_state.get('show_seq_container', False):  # Only show if the flag is set
-        with seq_container:
-            seq_mode(session, st.session_state.seq_question_num)
-    else:
-        seq_container.empty()  # Clear the container if the flag is not set
+    # Reset sequence state when switching to sequence mode or if a rerun is needed
+    if st.session_state.prev_mode != "Sequence" or st.session_state.rerun_seq_mode:
+        reset_seq_state()
+        st.session_state.rerun_seq_mode = False  # Reset rerun flag
+
+    with seq_container:
+        seq_mode(session, st.session_state.seq_question_num)
+
+    # Clear the container if the mode is not "Sequence"
+    if st.session_state.selected_mode != "Sequence":
+        seq_container.empty()
 else:
     # Clear all containers when not in Review or Sequence modes
     review_container.empty()
