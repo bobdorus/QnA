@@ -200,6 +200,12 @@ def reset_seq_state():
     st.session_state.score = 0
     st.session_state.selected_options = []  # Ensure selected options are cleared
 
+def reset_state():
+    st.session_state.selected_num = MIN
+    st.session_state.user_topic = []
+    st.session_state.user_comment = ""
+    reset_seq_state()
+
 def reset_mode_state(mode):
     st.session_state.selected_mode = mode
     reset_state()
