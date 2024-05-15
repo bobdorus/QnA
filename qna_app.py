@@ -1,5 +1,6 @@
 import streamlit as st
-from snowflake.snowpark.functions import Session, col
+from snowflake.snowpark.session import Session
+from snowflake.snowpark.functions import col
 import pandas as pd
 import datetime
 
@@ -16,9 +17,8 @@ TOPICS = [
     "Snowflake Performance and Tuning"
 ]
 
-# Placeholder Snowflake session initialization
 def create_session():
-    # Placeholder connection parameters; replace with actual Snowflake credentials
+    # Replace with your actual Snowflake connection parameters
     connection_parameters = {
         'account': '<account>',
         'user': '<user>',
@@ -134,7 +134,7 @@ def review_mode(session):
             formatted_correct_answer = ', '.join([f"<b>{char}</b>" for char in correct_answer])
         else:
             formatted_correct_answer = f"<b>{correct_answer}</b>"
-        
+
         st.subheader("Correct Answer:")
         st.markdown(formatted_correct_answer, unsafe_allow_html=True)
 
