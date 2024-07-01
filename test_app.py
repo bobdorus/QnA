@@ -24,7 +24,7 @@ session = create_session()
 selected_num = 1
 
 # Fetch data from Snowflake
-change_log_df = session.table("QNA_DB.pro.Question").filter(col("Q_NUM") == selected_num).toPandas()
+change_log_df = session.table("QNA_DB.pro.Question").toPandas()
 
 # Display data in Streamlit
 st.dataframe(change_log_df)
