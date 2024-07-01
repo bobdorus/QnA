@@ -1,5 +1,6 @@
 import streamlit as st
 from snowflake.snowpark.functions import col
+from snowflake.snowpark.session import Session
 import pandas as pd
 import datetime
 import uuid
@@ -7,9 +8,24 @@ import uuid
 MIN = 1
 MAX = 1100
 
+def create_session():
+    connection_parameters = {
+        "account": st.secrets["snowflake"]["account"],
+        "user": st.secrets["snowflake"]["user"],
+        "password": st.secrets["snowflake"]["password"],
+        "role": st.secrets["snowflake"]["role"],
+        "warehouse": st.secrets["snowflake"]["warehouse"],
+        "database": st.secrets["snowflake"]["database"],
+        "schema": st.secrets["snowflake"]["schema"]
+    }
+    session = Session.builder.configs(connection_parameters).create()
+    return session
+
+session = create_session()
+
 def get_option_selector(session, q_num):
-    options_df = session.table("qna.pro.options").filter(col("Q_NUM") == q_num).toPandas()
-    correct_answer = session.table("qna.pro.question").filter(col("Q_NUM") == q_num).select("CORRECT_ANSWER").collect()[0][0]
+    options_df = session.table("qna_db.pro.options").filter(col("Q_NUM") == q_num).toPandas()
+    correct_answer = session.table("qna_db.pro.question").filter(col("Q_NUM") == q_num).select("CORRECT_ANSWER").collect()[0][0]
 
     options_df["TEXT"] = options_df["TEXT"].str.strip()  # Remove leading and trailing spaces
 
@@ -24,7 +40,7 @@ def get_option_selector(session, q_num):
 def question_display(session, q_num):
     st.subheader("Question Details:")
 
-    my_dataframe = session.table("qna.pro.question").filter(col("Q_NUM") == q_num)
+    my_dataframe = session.table("qna_db.pro.question").filter(col("Q_NUM") == q_num)
     if my_dataframe.count() == 0:
         st.warning("Question not found.")
         return
@@ -69,7 +85,7 @@ def seq_mode(session, seq_question_num):
 
     if submit_button:
         st.session_state.completed_questions += 1
-        correct_answer = session.table("QNA_DB.pro.question").filter(col("Q_NUM") == seq_question_num).select("CORRECT_ANSWER").collect()[0][0]
+        correct_answer = session.table("qna_db.pro.question").filter(col("Q_NUM") == seq_question_num).select("CORRECT_ANSWER").collect()[0][0]
         user_answer = ', '.join([option[0] for option in selected_options])  # Take only the first letter of each option
         if user_answer != correct_answer:
             session_id = st.session_state.session_id
@@ -77,7 +93,7 @@ def seq_mode(session, seq_question_num):
             question_num = seq_question_num
             incorrect_answer = user_answer
             session.sql(f"""
-                INSERT INTO Session_Metrics (session_id, attempt_num, question_num, incorrect_answer)
+                INSERT INTO qna_db.pro.Session_Metrics (session_id, attempt_num, question_num, incorrect_answer)
                 VALUES ('{session_id}', {attempt_num}, {question_num}, '{incorrect_answer}')
             """).collect()
         else:
@@ -103,10 +119,6 @@ if 'seq_question_num' not in st.session_state:
 # Text input for question number
 q_num = st.text_input("Enter your question number:", value="1", key="q_num_input")
 change_question_button = st.button("Change Question")
-
-# Connection to Snowflake
-cnx = st.connection('snowflake')
-session = cnx.session()
 
 if change_question_button:
     try:
